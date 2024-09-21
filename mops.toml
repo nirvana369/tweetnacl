@@ -1,0 +1,20 @@
+[package]
+name = "tweetnacl"
+version = "1.0.0"
+description = "Port of [TweetNaCl](http://tweetnacl.cr.yp.to) / [NaCl](http://nacl.cr.yp.to/)to Motoko for icp canister (wasm runtime)."
+repository = "https://github.com/nirvana369/tweetnacl/"
+keywords = [
+  "signature",
+  "crypto",
+  "nacl",
+  "ed25519",
+  "curve25519",
+  "tweetnacl",
+  "secretbox",
+  "elliptic-curves",
+  "motoko"
+]
+license = "MIT"
+
+[dependencies]
+base = "0.13.0"
