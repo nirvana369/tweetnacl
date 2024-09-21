@@ -83,7 +83,7 @@ You need mops installed. In your project directory run:
 
 In the Motoko source file import the package as:
 
-    $ import nacl "mo:nacl";
+    $ import NACL "mo:tweetnacl";
 
 or [download source code](https://github.com/nirvana369/tweetnacl/releases).
 
