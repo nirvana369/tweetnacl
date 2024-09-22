@@ -2481,15 +2481,15 @@ module TweetNaCl {
     public module BOX {
 
         //  Length of public key in bytes.
-        public let PUBLIC_KEY_LENGTH = 32;
+        public let PUBLIC_KEY_LENGTH = crypto_box_PUBLICKEYBYTES;
         //  Length of secret key in bytes.
-        public let SECRET_KEY_LENGTH = 32;
+        public let SECRET_KEY_LENGTH = crypto_box_SECRETKEYBYTES;
         //  Length of precomputed shared key in bytes.
-        public let SHARED_KEY_LENGTH = 32;
+        public let SHARED_KEY_LENGTH = crypto_box_BEFORENMBYTES;
         //  Length of nonce in bytes.
-        public let NONCE_LENGTH = 24;
+        public let NONCE_LENGTH = crypto_box_NONCEBYTES;
         //  Length of overhead added to box compared to original message.
-        public let OVERHEAD_LENGTH = 16;
+        public let OVERHEAD_LENGTH = crypto_secretbox_BOXZEROBYTES;
 
         /**
         *   nacl.box(message, nonce, theirPublicKey, mySecretKey)
@@ -2548,11 +2548,11 @@ module TweetNaCl {
         public module SECRET {
 
             // Length of precomputed shared key in bytes.
-            public let KEY_LENGTH = 32;
+            public let KEY_LENGTH = crypto_secretbox_KEYBYTES;
             //  Length of nonce in bytes.
-            public let NONCE_LENGTH = 24;
+            public let NONCE_LENGTH = crypto_secretbox_NONCEBYTES;
             //  Length of overhead added to secret box compared to original message.
-            public let OVERHEAD_LENGTH = 16;
+            public let OVERHEAD_LENGTH = crypto_secretbox_BOXZEROBYTES;
 
             /**
             *   nacl.before(theirPublicKey, mySecretKey)
@@ -2614,13 +2614,13 @@ module TweetNaCl {
     public module SIGN {
 
         //  Length of signing public key in bytes.
-        public let PUBLIC_KEY_LENGTH = 32;
+        public let PUBLIC_KEY_LENGTH = crypto_sign_PUBLICKEYBYTES;
         //  Length of signing secret key in bytes.
-        public let SECRET_KEY_LENGTH = 64;
+        public let SECRET_KEY_LENGTH = crypto_sign_SECRETKEYBYTES;
         //  Length of seed for nacl.sign.keyPair.fromSeed in bytes.
-        public let SEED_LENGTH = 32;
+        public let SEED_LENGTH = crypto_sign_SEEDBYTES;
         //  Length of signature in bytes.
-        public let SIGNATURE_LENGTH = 64;
+        public let SIGNATURE_LENGTH = crypto_sign_BYTES;
 
         /**
         *   nacl.sign(message, secretKey)
@@ -2732,9 +2732,9 @@ module TweetNaCl {
     public module SCALARMULT {
 
         //  Length of scalar in bytes.
-        public let SCALAR_LENGTH = 32;
+        public let SCALAR_LENGTH = crypto_scalarmult_SCALARBYTES;
         //  Length of group element in bytes.
-        public let GROUP_ELEMENT_LENGTH = 32;
+        public let GROUP_ELEMENT_LENGTH = crypto_scalarmult_BYTES;
 
         /**
         *   nacl.scalarMult(n, p)

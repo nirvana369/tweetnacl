@@ -19,6 +19,8 @@ Documentation
   * [Hashing](#hashing)
   * [Random bytes generation](#random-bytes-generation)
   * [Constant-time comparison](#constant-time-comparison)
+* [Testing](#testing)
+* [Benchmarks](#benchmarks)
 * [Contributors](#contributors)
 
 
@@ -76,7 +78,7 @@ Installation
 
 Install with mops
 
-You need mops installed. In your project directory run:
+You need mops installed. In your project directory run 
 [Mops](https://mops.one/):
 
     $ mops add tweetnacl
@@ -336,6 +338,23 @@ non-zero and equal, and their contents are equal.
 Returns `false` if either of the arguments has zero length, or arguments have
 different lengths, or their contents differ.
 
+Testing
+------------
+Tesing with mops
+
+You need mops installed. In your project directory run 
+[Mops](https://mops.one/):
+
+    $ mops test
+
+Benchmarks
+------------
+Benchmarks with mops
+
+You need mops installed. In your project directory run 
+[Mops](https://mops.one/):
+
+    $ mops bench
 
 Contributors
 ------------
