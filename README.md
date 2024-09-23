@@ -2,7 +2,7 @@ tweetnacl.mo
 ============
 
 Port of [TweetNaCl](http://tweetnacl.cr.yp.to) / [NaCl](http://nacl.cr.yp.to/)
-to Motoko for icp canister (wasm runtime).
+to Motoko for icp canister (wasm runtime). Public domain.
 
 Documentation
 =============
