@@ -1,3 +1,5 @@
+[![mops](https://oknww-riaaa-aaaam-qaf6a-cai.raw.ic0.app/badge/mops/tweetnacl)](https://mops.one/tweetnacl) [![documentation](https://oknww-riaaa-aaaam-qaf6a-cai.raw.ic0.app/badge/documentation/tweetnacl)](https://mops.one/tweetnacl/docs)
+
 tweetnacl.mo
 ============
 
