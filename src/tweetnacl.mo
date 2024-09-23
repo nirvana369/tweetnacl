@@ -18,6 +18,8 @@
 * 09/19/2024        nirvana369      Unit test : module sign, fix bug func crypto_sign() -> modL not assign subbuffer to main param
 * 09/20/2024        nirvana369      Unit test : module box
 *                                   Fix bug Poly1305 : arithmetic overflow -> change nat16 to int64
+* 09/22/2024        nirvana369      Fix bug array index out of bound (Poly1305 (NACL.BOX module) - tag #22092024) when : 3 < message size < 16
+*                                   Update test
 ******************************************************************/
 
 import Float "mo:base/Float";
@@ -963,13 +965,15 @@ module TweetNaCl {
 
                 };
                 case _ {
-                    i := leftover;
-                    i += 1;
-                    buffer[i] := 1;
-                    while(i < 16) {
-                        buffer[i] := 0;
-                        i += 1;  
-                    }; 
+                    if (i < 16) {   // #22092024
+                        i := leftover;
+                        buffer[i] := 1;
+                        i += 1;
+                        while(i < 16) {
+                            buffer[i] := 0;
+                            i += 1;  
+                        }; 
+                    };
                     fin := 1;
                     blocks(Array.freeze(buffer), 0, 16);
                 };
@@ -1103,9 +1107,9 @@ module TweetNaCl {
                     i := 0;
                     while (i < bytes) {
                         buffer[leftover + i] := m[mpos+i];
-                        leftover += bytes;
                         i += 1;
                     };
+                    leftover += bytes;  // #22092024
                 };
             };
         };

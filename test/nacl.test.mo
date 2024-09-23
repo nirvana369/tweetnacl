@@ -37,13 +37,13 @@ actor {
             });
             test("NACL.SIGN.sign", func() {
                 let keypair = NACL.SIGN.keyPair(null);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let sign = NACL.SIGN.sign(msg, keypair.secretKey);
                 assert(sign.size() > 0);
             });
             test("NACL.SIGN.open", func() {
                 let keypair = NACL.SIGN.keyPair(null);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let msgSigned = NACL.SIGN.sign(msg, keypair.secretKey);
                 let rawMsg = NACL.SIGN.open(msgSigned, keypair.publicKey);
                 assert(rawMsg != null);
@@ -51,13 +51,13 @@ actor {
             });
             test("NACL.SIGN.DETACHED.detached", func() {
                 let keypair = NACL.SIGN.keyPair(null);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let sig = NACL.SIGN.DETACHED.detached(msg, keypair.secretKey);
                 assert(sig.size() > 0);
             });
             test("NACL.SIGN.DETACHED.verify", func() {
                 let keypair = NACL.SIGN.keyPair(null);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let signature = NACL.SIGN.DETACHED.detached(msg, keypair.secretKey);
                 let vrf = NACL.SIGN.DETACHED.verify(msg, signature, keypair.publicKey);
                 assert(vrf);
@@ -87,7 +87,7 @@ actor {
                 let keypairAlice = NACL.BOX.keyPair(null);
 
                 let nonce = NACL.randomBytes(NACL.BOX.NONCE_LENGTH);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let boxedMsg = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
                 assert(boxedMsg.size() > 0);
             });
@@ -97,11 +97,24 @@ actor {
                 let keypairAlice = NACL.BOX.keyPair(null);
 
                 let nonce = NACL.randomBytes(NACL.BOX.NONCE_LENGTH);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let msgBox = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
                 let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
                 assert(msgRaw != null);
                 assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+            });
+            test("NACL.BOX.open (test with message size < 16)", func() {
+                let keypairBob = NACL.BOX.keyPair(null);
+                for(i in Iter.range(0, 1000)) {()};
+                let keypairAlice = NACL.BOX.keyPair(null);
+                for (i in Iter.range(1, 16)) {
+                    let nonce = NACL.randomBytes(NACL.BOX.NONCE_LENGTH);
+                    let msg = NACL.randomBytes(i);
+                    let msgBox = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
+                    let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
+                    assert(msgRaw != null);
+                    assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+                }
             });
         });
 
@@ -118,7 +131,7 @@ actor {
                 let sharedKey = NACL.BOX.SECRET.before(keypairBob.publicKey, keypairAlice.secretKey);
 
                 let nonce = NACL.randomBytes(NACL.BOX.SECRET.NONCE_LENGTH);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 ignore NACL.BOX.SECRET.box(msg, nonce, sharedKey);
             });
             test("NACL.BOX.SECRET.open", func() {
@@ -128,7 +141,7 @@ actor {
                 let sharedKey = NACL.BOX.SECRET.before(keypairBob.publicKey, keypairAlice.secretKey);
 
                 let nonce = NACL.randomBytes(NACL.BOX.SECRET.NONCE_LENGTH);
-                let msg = NACL.randomBytes(128);
+                let msg = NACL.randomBytes(1024);
                 let msgBox = NACL.BOX.SECRET.box(msg, nonce, sharedKey);
                 
                 let msgRaw = NACL.BOX.SECRET.open(msgBox, nonce, sharedKey);
