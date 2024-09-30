@@ -4,7 +4,7 @@ tweetnacl.mo
 ============
 
 Port of [TweetNaCl](http://tweetnacl.cr.yp.to) / [NaCl](http://nacl.cr.yp.to/)
-to Motoko for icp canister (wasm runtime). Public domain.
+to Motoko for icp canister (wasm runtime).
 
 Documentation
 =============
@@ -118,6 +118,10 @@ Generates a new random key pair for box and returns it as an object with
     }
 Function's params (pRNG) is optional (func randomBytes(byteLength : Nat) : [Nat8]) function,
 in case you don't want use internal randomBytes function (set pRNG is null to use default setting).
+
+#### NACL.BOX.asyncKeyPair(pRNG : ?((Nat) -> async ([Nat8])))
+
+Async version of NACL.BOX.keyPair but use different logic to generate bytes.
 
 #### NACL.BOX.KEYPAIR.fromSecretKey(secretKey)
 
@@ -250,6 +254,10 @@ Generates new random key pair for signing and returns it as an object with
 Function's params (pRNG) is optional (func randomBytes(byteLength : Nat) : [Nat8]) function,
 in case you don't want use internal randomBytes function (set pRNG is null to use default setting).
 
+#### NACL.SIGN.asyncKeyPair(pRNG : ?((Nat) -> async ([Nat8])))
+
+Async version of NACL.SIGN.keyPair but use different logic to generate bytes.
+
 #### NACL.SIGN.KEYPAIR.fromSecretKey(secretKey)
 
 Returns a signing key pair with public key corresponding to the given
@@ -320,15 +328,11 @@ Length of hash in bytes.
 
 #### NACL.randomBytes(length)
 
-Returns a `[Nat8]` of the given length containing random bytes of
-cryptographic quality.
+A simple internal function returns a `[Nat8]` of the given length containing random bytes.
 
-**Implementation note**
+#### NACL.asyncRandomBytes(length)
 
-tweetnacl.mo uses the following lib to generate random bytes:
-
-* https://github.com/ZenVoich/fuzz
-
+Async version of NACL.randomBytes but use different logic to generate bytes.
 
 ### Constant-time comparison
 

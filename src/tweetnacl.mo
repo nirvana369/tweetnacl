@@ -34,8 +34,7 @@ import Debug "mo:base/Debug";
 import Nat "mo:base/Nat";
 import Blob "mo:base/Blob";
 import Time "mo:base/Time";
-import T "./generator/types";
-import FBlob "./generator/blob";
+import Random "mo:base/Random";
 
 module TweetNaCl {
 
@@ -1730,8 +1729,31 @@ module TweetNaCl {
         };
     };
 
+    public func asyncRandomBytes(r : Buffer.Buffer<Nat8>, byteNum : Nat, pRNG : ?((Nat) -> async ([Nat8]))) : async () {
+        switch (pRNG) {
+            case (?f) {
+                let x = await f(byteNum);
+                for (i in Iter.range(0, byteNum - 1)) {
+                    r.put(i, x[i]);
+                };
+            };
+            case null {
+                // process local
+                let x = await asyncRandomBytesInternal(byteNum);
+                for (i in Iter.range(0, byteNum - 1)) {
+                    r.put(i, x[i]);
+                };
+            };
+        };
+    };
+
     public func crypto_box_keypair(y : Buffer.Buffer<Nat8>, x : Buffer.Buffer<Nat8>, pRNG : ?((Nat) -> ([Nat8]))) : Int {
         randomBytes(x, crypto_box_SECRETKEYBYTES, pRNG);
+        return crypto_scalarmult_base(y, Buffer.toArray(x));
+    };
+
+    public func async_crypto_box_keypair(y : Buffer.Buffer<Nat8>, x : Buffer.Buffer<Nat8>, pRNG : ?((Nat) -> async ([Nat8]))) : async (Int) {
+        await asyncRandomBytes(x, crypto_box_SECRETKEYBYTES, pRNG);
         return crypto_scalarmult_base(y, Buffer.toArray(x));
     };
 
@@ -2275,6 +2297,23 @@ module TweetNaCl {
         return 0;
     };
 
+    public func async_crypto_sign_keypair(pk : Buffer.Buffer<Nat8>, sk : Buffer.Buffer<Nat8>, seeded : Bool, pRNG : ?((Nat) -> async ([Nat8]))) : async (Int) {
+        var d = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(64, func i = 0));
+        var p = [buffer_i64(16), buffer_i64(16), buffer_i64(16), buffer_i64(16)];
+
+        if (seeded == false) await asyncRandomBytes(sk, crypto_sign_SEEDBYTES, pRNG);
+        ignore crypto_hash(d, Buffer.toArray(sk), 32);
+        d.put(0, d.get(0) & 248);
+        d.put(31, d.get(31) & 127);
+        d.put(31, d.get(31) | 64);
+
+        scalarbase(p, Buffer.toArray(d));
+        pack(pk, p);
+
+        for (i in Iter.range(0, 31)) sk.put(i+32, pk.get(i));
+        return 0;
+    };
+
     public func modL(r : Buffer.Buffer<Nat8>, x : [var Int64]) {
         var carry : Int64 = 0;
         for (i in Iter.revRange(63, 32)) {
@@ -2456,25 +2495,40 @@ module TweetNaCl {
     /**
     *  Generator func base on current Time
     */
-    func createGenerator(): T.Generator<Nat> {
+    func nat8Generator(): {next : () -> (Nat8)} {
       let seed: Nat = Int.abs(Time.now());
       let prime = 456209410580464648418198177201;
       let prime2 = 4451889979529614097557895687536048212109;
       var prev = seed;
       {
-        next = func(): Nat {
+        next = func(): Nat8 {
           let cur = (prev * prime + 5) % prime2;
           prev := cur;
-          cur;
+          Nat8.fromIntWrap(cur);
         };
       };
     };
 
     func randomBytesInternal(blength: Nat): [Nat8] {
-        let gen = createGenerator();
-        let blob = FBlob.FBlob(gen);
-        let b = blob.random(blength);
-        Blob.toArray(b);
+        let randomNat8 = nat8Generator();
+        Array.tabulate<Nat8>(blength, func i = randomNat8.next());
+    };
+
+    func asyncRandomBytesInternal(blength: Nat): async [Nat8] {
+        let frandom = func () : async [Nat8] {Blob.toArray(await Random.blob())};
+        var r = Buffer.fromArray<Nat8>(await frandom());
+        if (r.size() > blength) {
+            r := Buffer.subBuffer(r, 0, blength);
+        };
+        while (r.size() < blength) {
+            let moreBytes = Buffer.fromArray<Nat8>(await frandom());
+            var i = 0;
+            while (r.size() < blength and i < moreBytes.size()) {
+                r.add(moreBytes.get(i));
+                i += 1;
+            };
+        };
+        Buffer.toArray(r);
     };
 
 
@@ -2520,13 +2574,27 @@ module TweetNaCl {
             return SECRET.open(msg, nonce, k);
         };
         
+        /**
+        *   nacl.box.keyPair()
+        *
+        *   Generates a new random key pair for box and returns it as an object with publicKey and secretKey members:
+        **/
         public func keyPair(pRNG : ?((Nat) -> ([Nat8]))) : {publicKey : [Nat8]; secretKey : [Nat8]} {
             let pk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_box_PUBLICKEYBYTES, func i = 0));
             let sk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_box_SECRETKEYBYTES, func i = 0));
-            switch (pRNG) {
-                case (?f)   ignore crypto_box_keypair(pk, sk, pRNG);
-                case (null) ignore crypto_box_keypair(pk, sk, ?randomBytesInternal);
-            };
+            ignore crypto_box_keypair(pk, sk, pRNG);
+            return {publicKey = Buffer.toArray(pk); secretKey = Buffer.toArray(sk)};
+        };
+
+        /**
+        *   async nacl.box.keyPair()
+        *
+        *   Generates a new random key pair for box and returns it as an object with publicKey and secretKey members:
+        **/
+        public func asyncKeyPair(pRNG : ?((Nat) -> async ([Nat8]))) : async ({publicKey : [Nat8]; secretKey : [Nat8]}) {
+            let pk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_box_PUBLICKEYBYTES, func i = 0));
+            let sk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_box_SECRETKEYBYTES, func i = 0));
+            ignore await async_crypto_box_keypair(pk, sk, pRNG);
             return {publicKey = Buffer.toArray(pk); secretKey = Buffer.toArray(sk)};
         };
 
@@ -2655,15 +2723,25 @@ module TweetNaCl {
 
         /**
         *   nacl.sign.keyPair()
+        *
         *   Generates new random key pair for signing and returns it as an object with publicKey and secretKey members:
         **/
         public func keyPair(pRNG : ?((Nat) -> ([Nat8]))) : {publicKey : [Nat8]; secretKey : [Nat8]} {
             let pk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_sign_PUBLICKEYBYTES, func i = 0));
             let sk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_sign_SECRETKEYBYTES, func i = 0));
-            switch (pRNG) {
-                case (?f) ignore crypto_sign_keypair(pk, sk, false, pRNG);
-                case (null) ignore crypto_sign_keypair(pk, sk, false, ?randomBytesInternal);
-            };
+            ignore crypto_sign_keypair(pk, sk, false, pRNG);
+            return {publicKey = Buffer.toArray(pk); secretKey = Buffer.toArray(sk)};
+        };
+
+        /**
+        *   async nacl.sign.keyPair()
+        *
+        *   Generates new random key pair for signing and returns it as an object with publicKey and secretKey members:
+        **/
+        public func asyncKeyPair(pRNG : ?((Nat) -> async ([Nat8]))) : async ({publicKey : [Nat8]; secretKey : [Nat8]}) {
+            let pk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_sign_PUBLICKEYBYTES, func i = 0));
+            let sk = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(crypto_sign_SECRETKEYBYTES, func i = 0));
+            ignore await async_crypto_sign_keypair(pk, sk, false, pRNG);
             return {publicKey = Buffer.toArray(pk); secretKey = Buffer.toArray(sk)};
         };
 

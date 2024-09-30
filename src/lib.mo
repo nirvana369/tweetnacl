@@ -38,6 +38,12 @@ module {
         Buffer.toArray(x);
     };
 
+    public func asyncRandomBytes(blength: Nat): async [Nat8] {
+        let x = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(blength, func i = 0));
+        await NACL.asyncRandomBytes(x, blength, null);
+        Buffer.toArray(x);
+    };
+
 
     /**
     *   Public-key authenticated encryption (box)
@@ -79,8 +85,22 @@ module {
             NACL.BOX.open(msg, nonce, publicKey, secretKey);
         };
         
+        /**
+        *   nacl.box.keyPair()
+        *
+        *   Generates a new random key pair for box and returns it as an object with publicKey and secretKey members:
+        **/
         public func keyPair(pRNG : ?((Nat) -> ([Nat8]))) : {publicKey : [Nat8]; secretKey : [Nat8]} {
             NACL.BOX.keyPair(pRNG);
+        };
+
+        /**
+        *   async nacl.box.keyPair()
+        *
+        *   Generates a new random key pair for box and returns it as an object with publicKey and secretKey members:
+        **/
+        public func asyncKeyPair(pRNG : ?((Nat) -> async ([Nat8]))) : async ({publicKey : [Nat8]; secretKey : [Nat8]}) {
+            await NACL.BOX.asyncKeyPair(pRNG);
         };
 
         public module KEYPAIR {
@@ -182,12 +202,21 @@ module {
 
         /**
         *   nacl.sign.keyPair()
+        *
         *   Generates new random key pair for signing and returns it as an object with publicKey and secretKey members:
         **/
         public func keyPair(pRNG : ?((Nat) -> ([Nat8]))) : {publicKey : [Nat8]; secretKey : [Nat8]} {
             NACL.SIGN.keyPair(pRNG);
         };
 
+        /**
+        *   async nacl.sign.keyPair()
+        *
+        *   Generates new random key pair for signing and returns it as an object with publicKey and secretKey members:
+        **/
+        public func asyncKeyPair(pRNG : ?((Nat) -> async ([Nat8]))) : async ({publicKey : [Nat8]; secretKey : [Nat8]}) {
+            await NACL.SIGN.asyncKeyPair(pRNG);
+        };
 
         public module KEYPAIR {
             

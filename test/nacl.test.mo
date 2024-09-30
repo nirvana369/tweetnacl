@@ -1,12 +1,10 @@
 import {test; suite} "mo:test";
 import Array "mo:base/Array";
-import Bool "mo:base/Bool";
 import Nat8 "mo:base/Nat8";
 import Option "mo:base/Option";
 import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import Blob "mo:base/Blob";
-import Debug "mo:base/Debug";
 import Char "mo:base/Char";
 import NACL "../src/lib";
 
@@ -28,11 +26,17 @@ actor {
     };
 
     func bytesToHex(uint8a: [Nat8]): Text {
-        // pre-caching improves the speed 6x
         let hexes = getHexes();
         let hex = Array.foldRight<Nat8, Text>(uint8a, "", 
                                             func(x, acc) = hexes[Nat8.toNat(x)] # acc);
         return hex;
+    };
+
+    func randomBytesExternal(blength: Nat): [Nat8] {
+        let x : [var Nat8] = Array.tabulateVar<Nat8>(blength, func i = 1);
+        x[0] := 111;
+        x[31] := 222;
+        Array.freeze(x);
     };
 
     public func runTests() : async () {
@@ -40,6 +44,22 @@ actor {
         suite("NACL.SIGN", func() {
             test("NACL.SIGN.keypair", func() {
                 let kp = NACL.SIGN.keyPair(null);
+                let sumPkBytes = Array.foldLeft<Nat8, Nat>(kp.publicKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                let sumSkBytes = Array.foldLeft<Nat8, Nat>(kp.secretKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                assert(sumPkBytes > 0);
+                assert(sumSkBytes > 0);
+                assert(kp.publicKey.size() == NACL.SIGN.PUBLIC_KEY_LENGTH);
+                assert(kp.secretKey.size() == NACL.SIGN.SECRET_KEY_LENGTH);
+            });
+
+            test("NACL.SIGN.keypair use external random func", func() {
+                let kp = NACL.SIGN.keyPair(?randomBytesExternal);
+                assert(kp.secretKey[0] == 111);
+                assert(kp.secretKey[31] == 222);
+                let sumPkBytes = Array.foldLeft<Nat8, Nat>(kp.publicKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                let sumSkBytes = Array.foldLeft<Nat8, Nat>(kp.secretKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                assert(sumPkBytes > 0);
+                assert(sumSkBytes > 0);
                 assert(kp.publicKey.size() == NACL.SIGN.PUBLIC_KEY_LENGTH);
                 assert(kp.secretKey.size() == NACL.SIGN.SECRET_KEY_LENGTH);
             });
@@ -93,6 +113,10 @@ actor {
         suite("NACL.BOX", func() {
             test("NACL.BOX.keypair", func() {
                 let kp = NACL.BOX.keyPair(null);
+                let sumPkBytes = Array.foldLeft<Nat8, Nat>(kp.publicKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                let sumSkBytes = Array.foldLeft<Nat8, Nat>(kp.secretKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                assert(sumPkBytes > 0);
+                assert(sumSkBytes > 0);
                 assert(kp.publicKey.size() == NACL.BOX.PUBLIC_KEY_LENGTH);
                 assert(kp.secretKey.size() == NACL.BOX.SECRET_KEY_LENGTH);
             });
@@ -188,17 +212,16 @@ actor {
                 let r = NACL.SCALARMULT.base(n);
                 assert(r.size() == NACL.SCALARMULT.GROUP_ELEMENT_LENGTH);
             });
+
             test("NACL.randomBytes", func() {
-                let rnd = NACL.randomBytes(32);
-                assert(rnd.size() == 32);
-                let rnd64 = NACL.randomBytes(64);
-                assert(rnd64.size() == 64);
-                let rnd128 = NACL.randomBytes(128);
-                assert(rnd128.size() == 128);
-                let rnd256 = NACL.randomBytes(256);
-                assert(rnd256.size() == 256);
-                let rnd512 = NACL.randomBytes(512);
-                assert(rnd512.size() == 512);
+                var byteLength = 32;
+                while (byteLength < 555) {
+                    let rnd = NACL.randomBytes(byteLength);
+                    let sumRndBytes = Array.foldLeft<Nat8, Nat>(rnd, 0, func (sum, xi) = sum + Nat8.toNat(xi));
+                    assert(sumRndBytes > 0);
+                    assert(rnd.size() == byteLength);
+                    byteLength *= 2;
+                };
             });
 
             let VECTORS = [
