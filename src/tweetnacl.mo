@@ -1660,8 +1660,8 @@ module TweetNaCl {
         let d = buffer_i64(16);
         let e = buffer_i64(16);
         let f = buffer_i64(16);
-        for (i in Iter.range(0, 30)) z.put(i, n.get(i));
-        z[31] := (n[31] & 127)|64;
+        for (i in Iter.range(0, 30)) z[i] := n[i];
+        z[31] := (n[31] & 127) | 64;
         z[0] &= 248;
         unpack25519(x, p);
         for (i in Iter.range(0, 15)) {
