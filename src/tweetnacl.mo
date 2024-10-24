@@ -20,6 +20,7 @@
 *                                   Fix bug Poly1305 : arithmetic overflow -> change nat16 to int64
 * 09/22/2024        nirvana369      Fix bug array index out of bound (Poly1305 (NACL.BOX module) - tag #22092024) when : 3 < message size < 16
 *                                   Update test
+* 10/24/2014        nirvana369      Refactor some func: change [Int64] -> Buffer<Int64>
 ******************************************************************/
 
 import Float "mo:base/Float";
@@ -1149,8 +1150,8 @@ module TweetNaCl {
         return 0;
     };
     
-    public func set25519(r : Buffer.Buffer<Int64>, a : [Int64]) {
-        for (i in Iter.range(0, 15)) r.put(i, a[i] | 0);
+    public func set25519(r : Buffer.Buffer<Int64>, a : Buffer.Buffer<Int64>) {
+        for (i in Iter.range(0, 15)) r.put(i, a.get(i) | 0);
     };
 
     func car25519(o : Buffer.Buffer<Int64>) {
@@ -1172,11 +1173,11 @@ module TweetNaCl {
         }
     };
 
-    public func pack25519(o : Buffer.Buffer<Nat8>, n : [Int64]) {
+    public func pack25519(o : Buffer.Buffer<Nat8>, n : Buffer.Buffer<Int64>) {
         var b : Int64 = 0;
         var m = buffer_i64(16);
         var t = buffer_i64(16);
-        for (i in Iter.range(0, 15)) t.put(i, n[i]);
+        for (i in Iter.range(0, 15)) t.put(i, n.get(i));
         car25519(t);
         car25519(t);
         car25519(t);
@@ -1197,7 +1198,7 @@ module TweetNaCl {
         };
     };
 
-    func neq25519(a : [Int64], b : [Int64]) : Int {
+    func neq25519(a : Buffer.Buffer<Int64>, b : Buffer.Buffer<Int64>) : Int {
         let c = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(32, func i = 0));
         var d = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(32, func i = 0));
         pack25519(c, a);
@@ -1205,7 +1206,7 @@ module TweetNaCl {
         return crypto_verify_32(Buffer.toArray(c), 0, Buffer.toArray(d), 0);
     };
 
-    func par25519(a : [Int64]) : Nat8 {
+    func par25519(a : Buffer.Buffer<Int64>) : Nat8 {
         var d = Buffer.fromArray<Nat8>(Array.tabulate<Nat8>(32, func i = 0));
         pack25519(d, a);
         return d.get(0) & 1;
@@ -1216,15 +1217,15 @@ module TweetNaCl {
         o.put(15, o.get(15) & 0x7fff);
     };
 
-    public func A(o : Buffer.Buffer<Int64>, a : [Int64], b : [Int64]) {
-        for (i in Iter.range(0, 15)) o.put(i, a[i] + b[i]);
+    public func A(o : Buffer.Buffer<Int64>, a : Buffer.Buffer<Int64>, b : Buffer.Buffer<Int64>) {
+        for (i in Iter.range(0, 15)) o.put(i, a.get(i) + b.get(i));
     };
 
-    public func Z(o : Buffer.Buffer<Int64>, a : [Int64], b : [Int64]) {
-        for (i in Iter.range(0, 15)) o.put(i, a[i] - b[i]);
+    public func Z(o : Buffer.Buffer<Int64>, a : Buffer.Buffer<Int64>, b : Buffer.Buffer<Int64>) {
+        for (i in Iter.range(0, 15)) o.put(i, a.get(i) - b.get(i));
     };
 
-    public func M(o : Buffer.Buffer<Int64>, a : [Int64], b : [Int64]) {
+    public func M(o : Buffer.Buffer<Int64>, a : Buffer.Buffer<Int64>, b : Buffer.Buffer<Int64>) {
         var t0 : Int64 = 0;
         var t1 : Int64 = 0;
         var t2 : Int64 = 0;
@@ -1260,24 +1261,24 @@ module TweetNaCl {
         var t29 : Int64 = 0;
         var t30 : Int64 = 0;
 
-        var b0 = b[0];
-        var b1 = b[1];
-        var b2 = b[2];
-        var b3 = b[3];
-        var b4 = b[4];
-        var b5 = b[5];
-        var b6 = b[6];
-        var b7 = b[7];
-        var b8 = b[8];
-        var b9 = b[9];
-        var b10 = b[10];
-        var b11 = b[11];
-        var b12 = b[12];
-        var b13 = b[13];
-        var b14 = b[14];
-        var b15 = b[15];
+        var b0 = b.get(0);
+        var b1 = b.get(1);
+        var b2 = b.get(2);
+        var b3 = b.get(3);
+        var b4 = b.get(4);
+        var b5 = b.get(5);
+        var b6 = b.get(6);
+        var b7 = b.get(7);
+        var b8 = b.get(8);
+        var b9 = b.get(9);
+        var b10 = b.get(10);
+        var b11 = b.get(11);
+        var b12 = b.get(12);
+        var b13 = b.get(13);
+        var b14 = b.get(14);
+        var b15 = b.get(15);
 
-        var v : Int64 = a[0];
+        var v : Int64 = a.get(0);
         t0 += v * b0;
         t1 += v * b1;
         t2 += v * b2;
@@ -1294,7 +1295,7 @@ module TweetNaCl {
         t13 += v * b13;
         t14 += v * b14;
         t15 += v * b15;
-        v := a[1];
+        v := a.get(1);
         t1 += v * b0;
         t2 += v * b1;
         t3 += v * b2;
@@ -1311,7 +1312,7 @@ module TweetNaCl {
         t14 += v * b13;
         t15 += v * b14;
         t16 += v * b15;
-        v := a[2];
+        v := a.get(2);
         t2 += v * b0;
         t3 += v * b1;
         t4 += v * b2;
@@ -1328,7 +1329,7 @@ module TweetNaCl {
         t15 += v * b13;
         t16 += v * b14;
         t17 += v * b15;
-        v := a[3];
+        v := a.get(3);
         t3 += v * b0;
         t4 += v * b1;
         t5 += v * b2;
@@ -1345,7 +1346,7 @@ module TweetNaCl {
         t16 += v * b13;
         t17 += v * b14;
         t18 += v * b15;
-        v := a[4];
+        v := a.get(4);
         t4 += v * b0;
         t5 += v * b1;
         t6 += v * b2;
@@ -1362,7 +1363,7 @@ module TweetNaCl {
         t17 += v * b13;
         t18 += v * b14;
         t19 += v * b15;
-        v := a[5];
+        v := a.get(5);
         t5 += v * b0;
         t6 += v * b1;
         t7 += v * b2;
@@ -1379,7 +1380,7 @@ module TweetNaCl {
         t18 += v * b13;
         t19 += v * b14;
         t20 += v * b15;
-        v := a[6];
+        v := a.get(6);
         t6 += v * b0;
         t7 += v * b1;
         t8 += v * b2;
@@ -1396,7 +1397,7 @@ module TweetNaCl {
         t19 += v * b13;
         t20 += v * b14;
         t21 += v * b15;
-        v := a[7];
+        v := a.get(7);
         t7 += v * b0;
         t8 += v * b1;
         t9 += v * b2;
@@ -1413,7 +1414,7 @@ module TweetNaCl {
         t20 += v * b13;
         t21 += v * b14;
         t22 += v * b15;
-        v := a[8];
+        v := a.get(8);
         t8 += v * b0;
         t9 += v * b1;
         t10 += v * b2;
@@ -1430,7 +1431,7 @@ module TweetNaCl {
         t21 += v * b13;
         t22 += v * b14;
         t23 += v * b15;
-        v := a[9];
+        v := a.get(9);
         t9 += v * b0;
         t10 += v * b1;
         t11 += v * b2;
@@ -1447,7 +1448,7 @@ module TweetNaCl {
         t22 += v * b13;
         t23 += v * b14;
         t24 += v * b15;
-        v := a[10];
+        v := a.get(10);
         t10 += v * b0;
         t11 += v * b1;
         t12 += v * b2;
@@ -1464,7 +1465,7 @@ module TweetNaCl {
         t23 += v * b13;
         t24 += v * b14;
         t25 += v * b15;
-        v := a[11];
+        v := a.get(11);
         t11 += v * b0;
         t12 += v * b1;
         t13 += v * b2;
@@ -1481,7 +1482,7 @@ module TweetNaCl {
         t24 += v * b13;
         t25 += v * b14;
         t26 += v * b15;
-        v := a[12];
+        v := a.get(12);
         t12 += v * b0;
         t13 += v * b1;
         t14 += v * b2;
@@ -1498,7 +1499,7 @@ module TweetNaCl {
         t25 += v * b13;
         t26 += v * b14;
         t27 += v * b15;
-        v := a[13];
+        v := a.get(13);
         t13 += v * b0;
         t14 += v * b1;
         t15 += v * b2;
@@ -1515,7 +1516,7 @@ module TweetNaCl {
         t26 += v * b13;
         t27 += v * b14;
         t28 += v * b15;
-        v := a[14];
+        v := a.get(14);
         t14 += v * b0;
         t15 += v * b1;
         t16 += v * b2;
@@ -1532,7 +1533,7 @@ module TweetNaCl {
         t27 += v * b13;
         t28 += v * b14;
         t29 += v * b15;
-        v := a[15];
+        v := a.get(15);
         t15 += v * b0;
         t16 += v * b1;
         t17 += v * b2;
@@ -1626,26 +1627,26 @@ module TweetNaCl {
         
     };
 
-    public func S(o : Buffer.Buffer<Int64>, a : [Int64]) {
+    public func S(o : Buffer.Buffer<Int64>, a : Buffer.Buffer<Int64>) {
         M(o, a, a);
     };
 
-    func inv25519(o : Buffer.Buffer<Int64>, i : [Int64]) {
+    func inv25519(o : Buffer.Buffer<Int64>, i : Buffer.Buffer<Int64>) {
         var c = buffer_i64(16);
-        for (a in Iter.range(0, 15)) c.put(a, i[a]);
+        for (a in Iter.range(0, 15)) c.put(a, i.get(a));
         for (a in Iter.revRange(253, 0)) {
-            S(c, Buffer.toArray(c));
-            if(a != 2 and a != 4) M(c, Buffer.toArray(c), i);
+            S(c, c);
+            if(a != 2 and a != 4) M(c, c, i);
         };
         for (a in Iter.range(0, 15)) o.put(a, c.get(a));
     };
 
-    public func pow2523(o : Buffer.Buffer<Int64>, i : [Int64]) {
+    public func pow2523(o : Buffer.Buffer<Int64>, i : Buffer.Buffer<Int64>) {
         var c = buffer_i64(16);
-        for (a in Iter.range(0, 15)) c.put(a, i[a]);
+        for (a in Iter.range(0, 15)) c.put(a, i.get(a));
         for (a in Iter.revRange(250, 0)) {
-            S(c, Buffer.toArray(c));
-            if(a != 1) M(c, Buffer.toArray(c), i);
+            S(c, c);
+            if(a != 1) M(c, c, i);
         };
         for (a in Iter.range(0, 15)) o.put(a, c.get(a));
     };
@@ -1659,8 +1660,8 @@ module TweetNaCl {
         let d = buffer_i64(16);
         let e = buffer_i64(16);
         let f = buffer_i64(16);
-        for (i in Iter.range(0, 30)) z[i] := n[i];
-        z[31] := (n[31]&127)|64;
+        for (i in Iter.range(0, 30)) z.put(i, n.get(i));
+        z[31] := (n[31] & 127)|64;
         z[0] &= 248;
         unpack25519(x, p);
         for (i in Iter.range(0, 15)) {
@@ -1672,26 +1673,26 @@ module TweetNaCl {
             let r : Int64 = (BitsPrc.nat8toInt64(z[Nat64.toNat(Int64.toNat64(Int64.fromInt(i) >> 3))]) >> (Int64.fromInt(i) & 7)) & 1;
             sel25519(a,b,r);
             sel25519(c,d,r);
-            A(e, Buffer.toArray(a), Buffer.toArray(c));
-            Z(a, Buffer.toArray(a), Buffer.toArray(c));
-            A(c, Buffer.toArray(b), Buffer.toArray(d));
-            Z(b, Buffer.toArray(b), Buffer.toArray(d));
-            S(d, Buffer.toArray(e));
-            S(f, Buffer.toArray(a));
-            M(a, Buffer.toArray(c), Buffer.toArray(a));
-            M(c, Buffer.toArray(b), Buffer.toArray(e));
-            A(e, Buffer.toArray(a), Buffer.toArray(c));
-            Z(a, Buffer.toArray(a), Buffer.toArray(c));
-            S(b, Buffer.toArray(a));
-            Z(c, Buffer.toArray(d), Buffer.toArray(f));
-            M(a, Buffer.toArray(c),_121665);
-            A(a, Buffer.toArray(a), Buffer.toArray(d));
-            M(c, Buffer.toArray(c), Buffer.toArray(a));
-            M(a, Buffer.toArray(d), Buffer.toArray(f));
-            M(d, Buffer.toArray(b), Buffer.toArray(x));
-            S(b, Buffer.toArray(e));
-            sel25519(a,b,r);
-            sel25519(c,d,r);
+            A(e, a, c);
+            Z(a, a, c);
+            A(c, b, d);
+            Z(b, b, d);
+            S(d, e);
+            S(f, a);
+            M(a, c, a);
+            M(c, b, e);
+            A(e, a, c);
+            Z(a, a, c);
+            S(b, a);
+            Z(c, d, f);
+            M(a, c, Buffer.fromArray(_121665));
+            A(a, a, d);
+            M(c, c, a);
+            M(a, d, f);
+            M(d, b, x);
+            S(b, e);
+            sel25519(a, b, r);
+            sel25519(c, d, r);
         };
         for (i in Iter.range(0, 15)) {
             x.put(i+16, a.get(i));
@@ -1701,9 +1702,9 @@ module TweetNaCl {
         };
         let x32 = Buffer.subBuffer<Int64>(x, 32, x.size() - 32);
         let x16 = Buffer.subBuffer<Int64>(x, 16, x.size() - 16);
-        inv25519(x32, Buffer.toArray(x32));
-        M(x16, Buffer.toArray(x16), Buffer.toArray(x32));
-        pack25519(q, Buffer.toArray(x16));
+        inv25519(x32, x32);
+        M(x16, x16, x32);
+        pack25519(q, x16);
         return 0;
     };
 
@@ -2219,25 +2220,25 @@ module TweetNaCl {
         let h = buffer_i64(16);
         let t = buffer_i64(16);
 
-        Z(a, Buffer.toArray(p[1]), Buffer.toArray(p[0]));
-        Z(t, Buffer.toArray(q[1]), Buffer.toArray(q[0]));
-        M(a, Buffer.toArray(a), Buffer.toArray(t));
-        A(b, Buffer.toArray(p[0]), Buffer.toArray(p[1]));
-        A(t, Buffer.toArray(q[0]), Buffer.toArray(q[1]));
-        M(b, Buffer.toArray(b), Buffer.toArray(t));
-        M(c, Buffer.toArray(p[3]), Buffer.toArray(q[3]));
-        M(c, Buffer.toArray(c), D2);
-        M(d, Buffer.toArray(p[2]), Buffer.toArray(q[2]));
-        A(d, Buffer.toArray(d), Buffer.toArray(d));
-        Z(e, Buffer.toArray(b), Buffer.toArray(a));
-        Z(f, Buffer.toArray(d), Buffer.toArray(c));
-        A(g, Buffer.toArray(d), Buffer.toArray(c));
-        A(h, Buffer.toArray(b), Buffer.toArray(a));
+        Z(a, p[1], p[0]);
+        Z(t, q[1], q[0]);
+        M(a, a, t);
+        A(b, p[0], p[1]);
+        A(t, q[0], q[1]);
+        M(b, b, t);
+        M(c, p[3], q[3]);
+        M(c, c, Buffer.fromArray(D2));
+        M(d, p[2], q[2]);
+        A(d, d, d);
+        Z(e, b, a);
+        Z(f, d, c);
+        A(g, d, c);
+        A(h, b, a);
 
-        M(p[0], Buffer.toArray(e), Buffer.toArray(f));
-        M(p[1], Buffer.toArray(h), Buffer.toArray(g));
-        M(p[2], Buffer.toArray(g), Buffer.toArray(f));
-        M(p[3], Buffer.toArray(e), Buffer.toArray(h));
+        M(p[0], e, f);
+        M(p[1], h, g);
+        M(p[2], g, f);
+        M(p[3], e, h);
     };
 
     func cswap(p : [Buffer.Buffer<Int64>], q : [Buffer.Buffer<Int64>], b : Int64) {
@@ -2250,18 +2251,18 @@ module TweetNaCl {
         var tx = buffer_i64(16);
         let ty = buffer_i64(16);
         let zi = buffer_i64(16);
-        inv25519(zi, Buffer.toArray(p[2]));
-        M(tx, Buffer.toArray(p[0]), Buffer.toArray(zi));
-        M(ty, Buffer.toArray(p[1]), Buffer.toArray(zi));
-        pack25519(r, Buffer.toArray(ty));
-        r.put(31, r.get(31) ^ (par25519(Buffer.toArray(tx)) << 7));
+        inv25519(zi, p[2]);
+        M(tx, p[0], zi);
+        M(ty, p[1], zi);
+        pack25519(r, ty);
+        r.put(31, r.get(31) ^ (par25519(tx) << 7));
     };
 
     public func scalarmult(p : [Buffer.Buffer<Int64>], q : [Buffer.Buffer<Int64>], s : [Nat8]) {
-        set25519(p[0], gf0);
-        set25519(p[1], gf1);
-        set25519(p[2], gf1);
-        set25519(p[3], gf0);
+        set25519(p[0], Buffer.fromArray(gf0));
+        set25519(p[1], Buffer.fromArray(gf1));
+        set25519(p[2], Buffer.fromArray(gf1));
+        set25519(p[3], Buffer.fromArray(gf0));
         for (i in Iter.revRange(255, 0)) {
             let b = (BitsPrc.nat8toInt64(s[Nat8.toNat((Nat8.fromNat(Int.abs(i))/8) | 0)]) >> (Int64.fromInt(i) & 7)) & 1;
             cswap(p, q, b);
@@ -2273,10 +2274,10 @@ module TweetNaCl {
 
     public func scalarbase(p : [Buffer.Buffer<Int64>], s : [Nat8]) {
         var q = [buffer_i64(16), buffer_i64(16), buffer_i64(16), buffer_i64(16)];
-        set25519(q[0], X);
-        set25519(q[1], Y);
-        set25519(q[2], gf1);
-        M(q[3], X, Y);
+        set25519(q[0], Buffer.fromArray(X));
+        set25519(q[1], Buffer.fromArray(Y));
+        set25519(q[2], Buffer.fromArray(gf1));
+        M(q[3], Buffer.fromArray(X), Buffer.fromArray(Y));
         scalarmult(p, q, s);
     };
 
@@ -2364,7 +2365,7 @@ module TweetNaCl {
         for (i in Iter.range(0, n - 1)) sm.put(64 + i, m[i]);
         for (i in Iter.range(0, 31)) sm.put(32 + i, d.get(32 + i));
 
-        ignore crypto_hash(r, Buffer.toArray(Buffer.subBuffer<Nat8>(sm, 32, sm.size() - 32)), n+32);
+        ignore crypto_hash(r, Buffer.toArray(Buffer.subBuffer<Nat8>(sm, 32, sm.size() - 32)), n + 32);
         reduce(r);
         scalarbase(p, Buffer.toArray(r));
         pack(sm, p);
@@ -2396,35 +2397,35 @@ module TweetNaCl {
         let den4 = buffer_i64(16);
         let den6 = buffer_i64(16);
 
-        set25519(r[2], gf1);
+        set25519(r[2], Buffer.fromArray(gf1));
         unpack25519(r[1], p);
-        S(num, Buffer.toArray(r[1]));
-        M(den, Buffer.toArray(num), D);
-        Z(num, Buffer.toArray(num), Buffer.toArray(r[2]));
-        A(den, Buffer.toArray(r[2]), Buffer.toArray(den));
+        S(num, r[1]);
+        M(den, num, Buffer.fromArray(D));
+        Z(num, num, r[2]);
+        A(den, r[2], den);
 
-        S(den2, Buffer.toArray(den));
-        S(den4, Buffer.toArray(den2));
-        M(den6, Buffer.toArray(den4), Buffer.toArray(den2));
-        M(t, Buffer.toArray(den6), Buffer.toArray(num));
-        M(t, Buffer.toArray(t), Buffer.toArray(den));
+        S(den2, den);
+        S(den4, den2);
+        M(den6, den4, den2);
+        M(t, den6, num);
+        M(t, t, den);
 
-        pow2523(t, Buffer.toArray(t));
-        M(t, Buffer.toArray(t), Buffer.toArray(num));
-        M(t, Buffer.toArray(t), Buffer.toArray(den));
-        M(t, Buffer.toArray(t), Buffer.toArray(den));
-        M(r[0], Buffer.toArray(t), Buffer.toArray(den));
+        pow2523(t, t);
+        M(t, t, num);
+        M(t, t, den);
+        M(t, t, den);
+        M(r[0], t, den);
 
-        S(chk, Buffer.toArray(r[0]));
-        M(chk, Buffer.toArray(chk), Buffer.toArray(den));
-        if (neq25519(Buffer.toArray(chk), Buffer.toArray(num)) != 0) M(r[0], Buffer.toArray(r[0]), I);
-        S(chk, Buffer.toArray(r[0]));
-        M(chk, Buffer.toArray(chk), Buffer.toArray(den));
-        if (neq25519(Buffer.toArray(chk), Buffer.toArray(num)) != 0) return -1;
+        S(chk, r[0]);
+        M(chk, chk, den);
+        if (neq25519(chk, num) != 0) M(r[0], r[0], Buffer.fromArray(I));
+        S(chk, r[0]);
+        M(chk, chk, den);
+        if (neq25519(chk, num) != 0) return -1;
 
-        if (par25519(Buffer.toArray(r[0])) == (p[31] >> 7)) Z(r[0], gf0, Buffer.toArray(r[0]));
+        if (par25519(r[0]) == (p[31] >> 7)) Z(r[0], Buffer.fromArray(gf0), r[0]);
 
-        M(r[3], Buffer.toArray(r[0]), Buffer.toArray(r[1]));
+        M(r[3], r[0], r[1]);
         return 0;
     };
 

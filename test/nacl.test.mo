@@ -6,6 +6,9 @@ import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import Blob "mo:base/Blob";
 import Char "mo:base/Char";
+import Debug "mo:base/Debug";
+import Nat "mo:base/Nat";
+import Buffer "mo:base/Buffer";
 import NACL "../src/lib";
 
 actor {
@@ -42,6 +45,7 @@ actor {
     public func runTests() : async () {
     
         suite("NACL.SIGN", func() {
+            
             test("NACL.SIGN.keypair", func() {
                 let kp = NACL.SIGN.keyPair(null);
                 let sumPkBytes = Array.foldLeft<Nat8, Nat>(kp.publicKey, 0, func (sum, xi) = sum + Nat8.toNat(xi));
@@ -87,27 +91,37 @@ actor {
                 let sign = NACL.SIGN.sign(msg, keypair.secretKey);
                 assert(sign.size() > 0);
             });
+
+            
             test("NACL.SIGN.open", func() {
-                let keypair = NACL.SIGN.keyPair(null);
-                let msg = NACL.randomBytes(1024);
-                let msgSigned = NACL.SIGN.sign(msg, keypair.secretKey);
-                let rawMsg = NACL.SIGN.open(msgSigned, keypair.publicKey);
-                assert(rawMsg != null);
-                assert(Array.equal(msg, Option.get(rawMsg, []), Nat8.equal));
+                for (i in Iter.range(0, 10)) {
+                    let keypair = NACL.SIGN.keyPair(null);
+                    let msg = NACL.randomBytes(1024);
+                    let msgSigned = NACL.SIGN.sign(msg, keypair.secretKey);
+                    let rawMsg = NACL.SIGN.open(msgSigned, keypair.publicKey);
+                    assert(rawMsg != null);
+                    assert(Array.equal(msg, Option.get(rawMsg, []), Nat8.equal));
+                };
             });
+            
+
             test("NACL.SIGN.DETACHED.detached", func() {
                 let keypair = NACL.SIGN.keyPair(null);
                 let msg = NACL.randomBytes(1024);
                 let sig = NACL.SIGN.DETACHED.detached(msg, keypair.secretKey);
                 assert(sig.size() > 0);
             });
+            
             test("NACL.SIGN.DETACHED.verify", func() {
-                let keypair = NACL.SIGN.keyPair(null);
-                let msg = NACL.randomBytes(1024);
-                let signature = NACL.SIGN.DETACHED.detached(msg, keypair.secretKey);
-                let vrf = NACL.SIGN.DETACHED.verify(msg, signature, keypair.publicKey);
-                assert(vrf);
+                for (i in Iter.range(0, 10)) {
+                    let keypair = NACL.SIGN.keyPair(null);
+                    let msg = NACL.randomBytes(1024);
+                    let signature = NACL.SIGN.DETACHED.detached(msg, keypair.secretKey);
+                    let vrf = NACL.SIGN.DETACHED.verify(msg, signature, keypair.publicKey);
+                    assert(vrf);
+                };
             });
+            
         });
 
         suite("NACL.BOX", func() {
@@ -141,18 +155,22 @@ actor {
                 let boxedMsg = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
                 assert(boxedMsg.size() > 0);
             });
+            
             test("NACL.BOX.open", func() {
-                let keypairBob = NACL.BOX.keyPair(null);
-                for(i in Iter.range(0, 1000)) {()};
-                let keypairAlice = NACL.BOX.keyPair(null);
+                for (i in Iter.range(0, 10)) {
+                    let keypairBob = NACL.BOX.keyPair(null);
+                    for(i in Iter.range(0, 1000)) {()};
+                    let keypairAlice = NACL.BOX.keyPair(null);
 
-                let nonce = NACL.randomBytes(NACL.BOX.NONCE_LENGTH);
-                let msg = NACL.randomBytes(1024);
-                let msgBox = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
-                let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
-                assert(msgRaw != null);
-                assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+                    let nonce = NACL.randomBytes(NACL.BOX.NONCE_LENGTH);
+                    let msg = NACL.randomBytes(1024);
+                    let msgBox = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
+                    let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
+                    assert(msgRaw != null);
+                    assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+                };
             });
+            
             test("NACL.BOX.open (test with message size < 16)", func() {
                 let keypairBob = NACL.BOX.keyPair(null);
                 for(i in Iter.range(0, 1000)) {()};
@@ -164,7 +182,7 @@ actor {
                     let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
                     assert(msgRaw != null);
                     assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
-                }
+                };
             });
         });
 
@@ -184,19 +202,23 @@ actor {
                 let msg = NACL.randomBytes(1024);
                 ignore NACL.BOX.SECRET.box(msg, nonce, sharedKey);
             });
-            test("NACL.BOX.SECRET.open", func() {
-                let keypairBob = NACL.BOX.keyPair(null);
-                for(i in Iter.range(0, 1000)) {()};
-                let keypairAlice = NACL.BOX.keyPair(null);
-                let sharedKey = NACL.BOX.SECRET.before(keypairBob.publicKey, keypairAlice.secretKey);
 
-                let nonce = NACL.randomBytes(NACL.BOX.SECRET.NONCE_LENGTH);
-                let msg = NACL.randomBytes(1024);
-                let msgBox = NACL.BOX.SECRET.box(msg, nonce, sharedKey);
-                
-                let msgRaw = NACL.BOX.SECRET.open(msgBox, nonce, sharedKey);
-                assert(msgRaw != null);
-                assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+            
+            test("NACL.BOX.SECRET.open", func() {
+                for (i in Iter.range(0, 10)) {
+                    let keypairBob = NACL.BOX.keyPair(null);
+                    for(i in Iter.range(0, 1000)) {()};
+                    let keypairAlice = NACL.BOX.keyPair(null);
+                    let sharedKey = NACL.BOX.SECRET.before(keypairBob.publicKey, keypairAlice.secretKey);
+
+                    let nonce = NACL.randomBytes(NACL.BOX.SECRET.NONCE_LENGTH);
+                    let msg = NACL.randomBytes(1024);
+                    let msgBox = NACL.BOX.SECRET.box(msg, nonce, sharedKey);
+                    
+                    let msgRaw = NACL.BOX.SECRET.open(msgBox, nonce, sharedKey);
+                    assert(msgRaw != null);
+                    assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+                };
             });
         });
 

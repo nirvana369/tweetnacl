@@ -1,9 +1,13 @@
 import {test; suite} "mo:test/async";
+import Utils "mo:test/expect/utils";
 import Array "mo:base/Array";
 import Nat8 "mo:base/Nat8";
 import Blob "mo:base/Blob";
 import Buffer "mo:base/Buffer";
 import Random "mo:base/Random";
+import Iter "mo:base/Iter";
+import Option "mo:base/Option";
+import Debug "mo:base/Debug";
 import NACL "../src/lib";
 
 actor {
@@ -53,6 +57,30 @@ actor {
                 assert(kp.publicKey.size() == NACL.SIGN.PUBLIC_KEY_LENGTH);
                 assert(kp.secretKey.size() == NACL.SIGN.SECRET_KEY_LENGTH);
             });
+
+            for (i in Iter.range(0, 5)) {
+                await test("NACL.SIGN.open", func() : async () {
+                    
+                        let keypair = await NACL.SIGN.asyncKeyPair(null);
+                        let msg = await NACL.asyncRandomBytes(1024);
+                        let msgSigned = NACL.SIGN.sign(msg, keypair.secretKey);
+                        let rawMsg = NACL.SIGN.open(msgSigned, keypair.publicKey);
+                        assert(rawMsg != null);
+                        assert(Array.equal(msg, Option.get(rawMsg, []), Nat8.equal));
+                    
+                });
+            };
+            
+            for (i in Iter.range(0, 5)) {
+                await test("NACL.SIGN.DETACHED.verify", func() : async () {
+                        let keypair = await NACL.SIGN.asyncKeyPair(null);
+                        let msg = await NACL.asyncRandomBytes(1024);
+                        let signature = NACL.SIGN.DETACHED.detached(msg, keypair.secretKey);
+                        let vrf = NACL.SIGN.DETACHED.verify(msg, signature, keypair.publicKey);
+                        assert(vrf);
+                    
+                });
+            };
         });
 
         await suite("NACL.BOX", func() : async () {
@@ -65,6 +93,39 @@ actor {
                 assert(kp.publicKey.size() == NACL.BOX.PUBLIC_KEY_LENGTH);
                 assert(kp.secretKey.size() == NACL.BOX.SECRET_KEY_LENGTH);
             });
+
+            for (i in Iter.range(0, 5)) {
+                await test("NACL.BOX.open", func() : async () {
+                    
+                        let keypairBob = await NACL.BOX.asyncKeyPair(null);
+                        let keypairAlice = await NACL.BOX.asyncKeyPair(null);
+
+                        let nonce = await NACL.asyncRandomBytes(NACL.BOX.NONCE_LENGTH);
+                        let msg = await NACL.asyncRandomBytes(1024);
+                        let msgBox = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
+                        let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
+                        assert(msgRaw != null);
+                        assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+                    
+                });
+            };
+            
+            for (i in Iter.range(0, 5)) {
+                await test("NACL.BOX.open (test with message size < 16)", func() : async () {
+                    
+                        for (i in Iter.range(1, 16)) {
+                            let keypairBob = await NACL.BOX.asyncKeyPair(null);
+                            let keypairAlice = await NACL.BOX.asyncKeyPair(null);
+                            let nonce = await NACL.asyncRandomBytes(NACL.BOX.NONCE_LENGTH);
+                            let msg = await NACL.asyncRandomBytes(i);
+                            let msgBox = NACL.BOX.box(msg, nonce, keypairBob.publicKey, keypairAlice.secretKey);
+                            let msgRaw = NACL.BOX.open(msgBox, nonce, keypairAlice.publicKey, keypairBob.secretKey);
+                            assert(msgRaw != null);
+                            assert(Array.equal(msg, Option.get(msgRaw, []), Nat8.equal));
+                        };
+                    
+                });
+            };
         });
 
         await suite("NACL.asyncRandomBytes", func() : async () {
