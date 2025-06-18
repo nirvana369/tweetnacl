@@ -2,7 +2,7 @@ dependencies = { }
 
 [package]
 name = "tweetnacl"
-version = "1.1.1"
+version = "1.1.2"
 description = "Port of [TweetNaCl](http://tweetnacl.cr.yp.to) / [NaCl](http://nacl.cr.yp.to/)to Motoko for icp canister (wasm runtime)."
 repository = "https://github.com/nirvana369/tweetnacl/"
 keywords = [
